@@ -2,7 +2,6 @@ const userController = require("../controllers/userController.js");
 const router = require("express").Router();
 
 // api routes
-router.post("/registerUser", userController.registerUser);
 router.post("/register", userController.register);
 
 router.get("/allUsers", userController.getAllUsers);
