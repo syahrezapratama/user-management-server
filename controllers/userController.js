@@ -1,18 +1,21 @@
 const db = require("../models/index.js");
+const bcrypt = require("bcrypt");
 
 // main model
 const User = db.users;
 
-// register a user
-const registerUser = async (req, res) => {
-    let data = {
-        email: req.body.email,
-        name: req.body.name,
-        zipCode: req.body.zipCode,
-        city: req.body.city,
-        phone: req.body.phone,
-        password: req.body.password,
-        type: req.body.type ? req.body.type : "normal"
+// register user (with hashed password)
+const register = async (req, res) => {
+    const { password } = req.body;
+    const hash = await bcrypt.hash(password, 12);
+    const data = {
+      email: req.body.email,
+      name: req.body.name,
+      zipCode: req.body.zipCode,
+      city: req.body.city,
+      phone: req.body.phone,
+      password: hash,
+      type: req.body.type ? req.body.type : "normal",
     };
     const user = await User.create(data);
     res.status(201).send(user);
@@ -59,7 +62,7 @@ const deleteUser = async (req, res) => {
 }
 
 module.exports = {
-    registerUser,
+    register,
     getAllUsers,
     getUser,
     updateUser,
