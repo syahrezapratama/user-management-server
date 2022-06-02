@@ -2,13 +2,15 @@ const express = require("express");
 const cors = require("cors");
 const app = express();
 
-// middleware
+
 var corsOptions = {
   origin: "http://localhost:8080",
 }
 app.use(cors(corsOptions));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
+// read body data
+app.use(express.json()); // to support JSON-encoded bodies
+app.use(express.urlencoded({ extended: true })); // to support URL-encoded bodies
 
 // routers
 const router = require("./routes/userRouter.js");
@@ -24,5 +26,5 @@ const PORT = process.env.PORT || 8081;
 
 // server
 app.listen(PORT, () => {
-  console.log(`Listening on port ${PORT}...`);
+  console.log(`Server listening on port ${PORT}...`);
 });
