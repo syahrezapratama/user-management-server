@@ -8,18 +8,32 @@ const User = db.users;
 
 // register user (with hashed password)
 const register = async (req, res) => {
-  const data = {
-    email: req.body.email,
-    name: req.body.name,
-    zipCode: req.body.zipCode,
-    city: req.body.city,
-    phone: req.body.phone,
-    password: req.body.password,
-    type: req.body.type ? req.body.type : "normal",
-  };
-  const user = await User.create(data);
-  res.status(201).send(user);
-  console.log(user);
+  // check if a user with the same email already exist
+  const userExist = await User.findOne({
+    where: {
+      email: req.body.email
+    }
+  });
+  try {
+    if (userExist) {
+      res.send("User with the same e-mail is already registered.");
+      throw new Error("User already exist.");
+    } else {
+      const data = {
+        email: req.body.email,
+        name: req.body.name,
+        zipCode: req.body.zipCode,
+        city: req.body.city,
+        phone: req.body.phone,
+        password: req.body.password,
+        type: req.body.type ? req.body.type : "normal",
+      };
+      const user = await User.create(data);
+      res.status(201).send(user);
+    }
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 // get all users
