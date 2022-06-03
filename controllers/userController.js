@@ -2,6 +2,7 @@ require("dotenv").config();
 const db = require("../models/index.js");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { createAccessToken, createRefreshToken } = require("../tokens/index.js");
 
 // main model
 const User = db.users;
@@ -87,7 +88,10 @@ const loginUser = async (req, res) => {
     const validPassword = await bcrypt.compare(password, user.password);
     if (validPassword) {
       const authUser = { email: user.email };
-      const accessToken = jwt.sign(authUser, process.env.ACCESS_TOKEN_SECRET);
+      // create refresh and access token
+      // const accessToken = jwt.sign(authUser, process.env.ACCESS_TOKEN_SECRET);
+      const accessToken = createAccessToken(authUser);
+      // const refreshToken = createRefreshToken(authUser);
       res.json({ accessToken: accessToken });
     //   res.status(200).send("User is logged in.");
     } else {
