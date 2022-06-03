@@ -14,7 +14,7 @@ app.use(express.urlencoded({ extended: true })); // to support URL-encoded bodie
 
 // routers
 const router = require("./routes/userRouter.js");
-app.use("/api/users", router);
+app.use("/api", router);
 
 // testing api
 app.get("/", (req, res) => {

@@ -20,12 +20,16 @@ router.post("/register", userController.register);
 
 router.get("/allUsers", authenticateToken, userController.getAllUsers);
 
-router.get("/:id", userController.getUser);
+router.get("/user/:id", userController.getUser);
 
-router.put("/:id", userController.updateUser);
+router.put("/user/:id", userController.updateUser);
 
-router.delete("/:id", userController.deleteUser);
+router.delete("/user/:id", userController.deleteUser);
 
 router.post("/login", userController.loginUser);
+
+router.post("/token", userController.checkRefreshToken);
+
+router.delete("/logout", userController.logoutUser);
 
 module.exports = router;

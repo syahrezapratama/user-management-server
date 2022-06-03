@@ -31,6 +31,10 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       defaultValue: "normal",
     },
+    refreshToken: {
+      type: DataTypes.STRING,
+      allowNull: true
+    }
   });
 
   User.beforeCreate(async (user, options) => {
