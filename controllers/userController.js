@@ -3,6 +3,7 @@ const db = require("../models/index.js");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { createAccessToken, createRefreshToken } = require("../tokens/index.js");
+const { Op } = require("sequelize");
 
 // main model
 const User = db.users;
@@ -134,6 +135,23 @@ const logoutUser = async (req, res) => {
     }
   });
   res.sendStatus(204);
+};
+
+// search for users
+const searchUsers = async (req, res) => {
+  const { email, name, zipCode, city, phone } = req.query;
+  const users = await User.findAll({
+    where: {
+      [Op.and]: [
+        { email: email},
+        { name: name },
+        { zipCode: zipCode },
+        { city: city },
+        { phone: phone }
+      ]
+    }
+  });
+  res.status(200).send(users);
 }
 
 module.exports = {
@@ -144,5 +162,6 @@ module.exports = {
   deleteUser,
   loginUser,
   checkRefreshToken,
-  logoutUser
+  logoutUser,
+  searchUsers
 };

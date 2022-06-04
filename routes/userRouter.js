@@ -18,7 +18,7 @@ function authenticateToken(req, res, next) {
 // api routes
 router.post("/register", userController.register);
 
-router.get("/allUsers", authenticateToken, userController.getAllUsers);
+router.get("/users", userController.getAllUsers);
 
 router.get("/user/:id", userController.getUser);
 
@@ -31,5 +31,7 @@ router.post("/login", userController.loginUser);
 router.post("/token", userController.checkRefreshToken);
 
 router.delete("/logout", userController.logoutUser);
+
+router.get("/search", userController.searchUsers);
 
 module.exports = router;
