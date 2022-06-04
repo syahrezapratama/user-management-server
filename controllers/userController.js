@@ -140,15 +140,24 @@ const logoutUser = async (req, res) => {
 // search for users
 const searchUsers = async (req, res) => {
   const { email, name, zipCode, city, phone } = req.query;
+  console.log(email, name, zipCode, city, phone);
+
+  const columns = ['email', 'name', 'zipCode', 'city', 'phone'];
+  const queries = [ email, name, zipCode, city, phone];
+  let arr = [];
+
+  for(let i = 0; i < columns.length; i++){
+    let column = columns[i];
+    if(queries[i]){
+      arr.push({ [column]: queries[i]});
+    }
+  }
+
+  console.log(arr)
+
   const users = await User.findAll({
     where: {
-      [Op.and]: [
-        { email: email},
-        { name: name },
-        { zipCode: zipCode },
-        { city: city },
-        { phone: phone }
-      ]
+      [Op.and]: arr
     }
   });
   res.status(200).send(users);
