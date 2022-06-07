@@ -38,10 +38,9 @@ const register = async (req, res) => {
   }
 };
 
-// get all users
+// get all users (with pagination)
 const getAllUsers = async (req, res) => {
-  let users = await User.findAll({});
-  res.status(200).send(users);
+  res.status(200).send(res.paginatedResults);
 };
 
 // get a single user
