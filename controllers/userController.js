@@ -8,33 +8,22 @@ const { Op } = require("sequelize");
 // main model
 const User = db.users;
 
-// register user (with hashed password)
+// register user with Joi validation
 const register = async (req, res) => {
-  // check if a user with the same email already exist
-  const userExist = await User.findOne({
-    where: {
-      email: req.body.email
-    }
-  });
+  const userData = {
+    ...req.body,
+    type: req.body.type ? req.body.type : "normal"
+  };
+  const userExist = await User.findOne({ where: { email: userData.email }});
+  if (userExist) {
+    return res.send("User with the same e-mail is already registered");
+  }
   try {
-    if (userExist) {
-      res.send("User with the same e-mail is already registered.");
-      throw new Error("User already exist.");
-    } else {
-      const data = {
-        email: req.body.email,
-        name: req.body.name,
-        zipCode: req.body.zipCode,
-        city: req.body.city,
-        phone: req.body.phone,
-        password: req.body.password,
-        type: req.body.type ? req.body.type : "normal",
-      };
-      const user = await User.create(data);
+      const user = await User.create(userData);
       res.status(201).send(user);
-    }
   } catch (error) {
     console.log(error);
+    res.status(500).send("Invalid user input");
   }
 };
 
@@ -96,11 +85,14 @@ const loginUser = async (req, res) => {
     const accessToken = createAccessToken(authUser);
     const refreshToken = createRefreshToken(authUser);
     // put refresh token in the database
-    await User.update({ refreshToken: refreshToken }, {
-      where: {
-        email: user.email
+    await User.update(
+      { refreshToken: refreshToken },
+      {
+        where: {
+          email: user.email,
+        },
       }
-    });
+    );
     await res.json({ accessToken: accessToken, refreshToken: refreshToken });
     // res.status(200).send("User is logged in.");
   } catch (error) {
@@ -114,25 +106,28 @@ const checkRefreshToken = async (req, res) => {
   if (refreshToken == null) return res.sendStatus(401);
   const refreshTokenInDB = await User.findOne({
     where: {
-      refreshToken: refreshToken
-    }
-  })
+      refreshToken: refreshToken,
+    },
+  });
   if (!refreshTokenInDB) return res.sendStatus(403);
   jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (error, user) => {
     if (error) return res.sendStatus(403);
     const accessToken = createAccessToken({ email: user.email });
     res.json({ accessToken: accessToken });
-  }) 
+  });
 };
 
 const logoutUser = async (req, res) => {
   // delete refresh token from database
   const { token } = req.body;
-  await User.update({ refreshToken: null }, {
-    where: {
-      refreshToken: token
+  await User.update(
+    { refreshToken: null },
+    {
+      where: {
+        refreshToken: token,
+      },
     }
-  });
+  );
   res.sendStatus(204);
 };
 
@@ -141,26 +136,26 @@ const searchUsers = async (req, res) => {
   const { email, name, zipCode, city, phone } = req.query;
   console.log(email, name, zipCode, city, phone);
 
-  const columns = ['email', 'name', 'zipCode', 'city', 'phone'];
-  const queries = [ email, name, zipCode, city, phone];
+  const columns = ["email", "name", "zipCode", "city", "phone"];
+  const queries = [email, name, zipCode, city, phone];
   let arr = [];
 
-  for(let i = 0; i < columns.length; i++){
+  for (let i = 0; i < columns.length; i++) {
     let column = columns[i];
-    if(queries[i]){
-      arr.push({ [column]: queries[i]});
+    if (queries[i]) {
+      arr.push({ [column]: queries[i] });
     }
   }
 
-  console.log(arr)
+  console.log(arr);
 
   const users = await User.findAll({
     where: {
-      [Op.and]: arr
-    }
+      [Op.and]: arr,
+    },
   });
   res.status(200).send(users);
-}
+};
 
 module.exports = {
   register,
@@ -171,5 +166,5 @@ module.exports = {
   loginUser,
   checkRefreshToken,
   logoutUser,
-  searchUsers
+  searchUsers,
 };
