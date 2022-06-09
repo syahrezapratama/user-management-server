@@ -41,6 +41,11 @@ module.exports = (sequelize, DataTypes) => {
     const hash = await bcrypt.hash(user.password, 12);
     user.password = hash;
   });
+
+  User.beforeUpdate(async (user, options) => {
+    const hash = await bcrypt.hash(user.password, 12);
+    user.password = hash;
+  });
   
   return User;
 };

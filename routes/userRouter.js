@@ -40,6 +40,7 @@ function paginatedResults(model) {
     }
     try {
       results.results = await model.findAll({
+        attributes: ["id", "email", "name", "zipCode","city","phone", "type", "refreshToken"],
         offset: startIndex,
         limit: limit,
       });
@@ -65,11 +66,11 @@ function validateUserInput(req, res, next) {
     type: Joi.string(),
   });
   const { error } = userSchema.validate(req.body);
-    if (error) {
-      throw new Error(error);
-    } else {
-      next();
-    }
+  if (error) {
+    throw new Error(error);
+  } else {
+    next();
+  }
 }
 
 // api routes
@@ -79,7 +80,7 @@ router.get("/users", paginatedResults(User), userController.getAllUsers);
 
 router.get("/user/:id", userController.getUser);
 
-router.put("/user/:id", validateUserInput, userController.updateUser);
+router.put("/user/:id", userController.updateUser);
 
 router.delete("/user/:id", userController.deleteUser);
 

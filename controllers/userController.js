@@ -12,18 +12,25 @@ const User = db.users;
 const register = async (req, res) => {
   const userData = {
     ...req.body,
-    type: req.body.type ? req.body.type : "normal"
+    type: req.body.type ? req.body.type : "normal",
   };
-  const userExist = await User.findOne({ where: { email: userData.email }});
+  const userExist = await User.findOne({ where: { email: userData.email } });
   if (userExist) {
-    return res.send("User with the same e-mail is already registered");
-  }
-  try {
+    const warning = "Ein Nutzer mit dem eingegebenen Email ist bereits angemeldet.";
+    res.status(400).send({ message: warning });
+    // return res.send(warning);
+  } else {
+    try { 
       const user = await User.create(userData);
       res.status(201).send(user);
-  } catch (error) {
-    console.log(error);
-    res.status(500).send("Invalid user input");
+    } catch (error) {
+      console.log(error);
+      res
+        .status(400)
+        .send({
+          message: "Bitte prüfen und korrigieren Sie ihre Daten.",
+        });
+    }
   }
 };
 
@@ -39,19 +46,56 @@ const getUser = async (req, res) => {
     where: {
       id: id,
     },
+    attributes: [
+      "id",
+      "email",
+      "name",
+      "zipCode",
+      "city",
+      "phone",
+      "type",
+      "refreshToken",
+    ],
   });
   res.status(200).send(user);
 };
 
 // update a user
 const updateUser = async (req, res) => {
-  let id = req.params.id;
-  const user = await User.update(req.body, {
-    where: {
-      id: id,
-    },
-  });
-  res.status(200).send(user);
+  const id = req.params.id;
+  const newPassword = req.body.password;
+  try {
+    if (newPassword) {
+      await User.update(
+        { password: newPassword },
+        {
+          where: {
+            id: id,
+          },
+          individualHooks: true,
+        }
+      );
+    }
+    const user = await User.update(
+      {
+        email: req.body.email,
+        name: req.body.name,
+        zipCode: req.body.zipCode,
+        city: req.body.city,
+        phone: req.body.phone,
+      },
+      {
+        where: {
+          id: id,
+        },
+        // individualHooks: true,
+      }
+    );
+    res.status(200).send(user);
+  } catch (error) {
+    console.log(error);
+    res.status(500).send("Failed to update");
+  }
 };
 
 // detele a user
