@@ -187,7 +187,10 @@ const searchUsers = async (req, res) => {
   for (let i = 0; i < columns.length; i++) {
     let column = columns[i];
     if (queries[i]) {
-      arr.push({ [column]: queries[i] });
+      arr.push({ 
+        [column]: {
+          [Op.substring]: queries[i]}
+      });
     }
   }
 
