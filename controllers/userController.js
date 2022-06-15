@@ -23,38 +23,18 @@ const register = catchAsync(async (req, res, next) => {
       "Ein Nutzer mit dem eingegebenen Email ist bereits angemeldet.";
     res.status(400).send({ message: warning });
     return;
-  } 
-  try {
-    const user = await User.create(userData);
-    res.status(201).send(user);
-  } catch (error) {
-    console.log(error);
-    res.status(400).send({
-      message: "Bitte prüfen und korrigieren Sie ihre Daten.",
-    });
-    return;
   }
-  // else {
-  //   try {
-  //     const user = await User.create(userData);
-  //     res.status(201).send(user);
-  //   } catch (error) {
-  //     console.log(error);
-  //     res.status(400).send({
-  //       message: "Bitte prüfen und korrigieren Sie ihre Daten.",
-  //     });
-  //     return;
-  //   }
-  // }
+  const user = await User.create(userData);
+  res.status(201).send(user);
 });
 
 // get all users (with pagination)
-const getAllUsers = async (req, res) => {
+const getAllUsers = catchAsync(async (req, res) => {
   res.status(200).send(res.paginatedResults);
-};
+});
 
 // get a single user
-const getUser = async (req, res) => {
+const getUser = catchAsync(async (req, res) => {
   let id = req.params.id;
   let user = await User.findOne({
     where: {
@@ -71,49 +51,53 @@ const getUser = async (req, res) => {
       "refreshToken",
     ],
   });
+  if (!user) {
+    throw new ExpressError(404, "User Not Found");
+  }
   res.status(200).send(user);
-};
+});
 
 // update a user
-const updateUser = async (req, res) => {
+const updateUser = catchAsync(async (req, res) => {
   const id = req.params.id;
   const newPassword = req.body.password;
-  try {
-    if (newPassword) {
-      await User.update(
-        { password: newPassword },
-        {
-          where: {
-            id: id,
-          },
-          individualHooks: true,
-        }
-      );
-    }
-    const user = await User.update(
-      {
-        email: req.body.email,
-        name: req.body.name,
-        zipCode: req.body.zipCode,
-        city: req.body.city,
-        phone: req.body.phone,
-      },
+  const isUserExist = await User.findOne({
+    where: { id: id }
+  });
+  if (!isUserExist) {
+    throw new ExpressError(404, "User Not Found");
+  }
+  if (newPassword) {
+    await User.update(
+      { password: newPassword },
       {
         where: {
           id: id,
         },
-        // individualHooks: true,
+        individualHooks: true,
       }
     );
-    res.status(200).send(user);
-  } catch (error) {
-    console.log(error);
-    res.status(500).send("Failed to update");
   }
-};
+  const user = await User.update(
+    {
+      email: req.body.email,
+      name: req.body.name,
+      zipCode: req.body.zipCode,
+      city: req.body.city,
+      phone: req.body.phone,
+    },
+    {
+      where: {
+        id: id,
+      },
+      // individualHooks: true,
+    }
+  );
+  res.status(200).send(user);
+});
 
 // detele a user
-const deleteUser = async (req, res) => {
+const deleteUser = catchAsync(async (req, res) => {
   let id = req.params.id;
   await User.destroy({
     where: {
@@ -121,10 +105,10 @@ const deleteUser = async (req, res) => {
     },
   });
   res.status(200).send(`User with id: ${id} is deleted.`);
-};
+});
 
 // login a user
-const loginUser = async (req, res) => {
+const loginUser = catchAsync(async (req, res) => {
   const { email, password } = req.body;
   // find user with the email
   const user = await User.findOne({
@@ -132,22 +116,21 @@ const loginUser = async (req, res) => {
       email: email,
     },
   });
-  try {
-    const validPassword = await bcrypt.compare(password, user.password);
+  const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
-      res.status(401).send({ message: "Incorrect email or password." });
-      return;
+      throw new ExpressError(401, { message: "Incorrect email or password" });
     }
     const authUser = { email: user.email };
     const accessToken = createAccessToken(authUser);
     await res
       .status(200)
-      .send({ id: user.id, email: user.email, name: user.name, accessToken: accessToken });
-  } catch (error) {
-    console.log(error);
-    res.status(500).send({ message: "Something went wrong, try again later."});
-  }
-};
+      .send({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        accessToken: accessToken,
+      });
+});
 
 const checkRefreshToken = async (req, res) => {
   const refreshToken = req.body.token;
@@ -165,7 +148,7 @@ const checkRefreshToken = async (req, res) => {
   });
 };
 
-const logoutUser = async (req, res) => {
+const logoutUser = catchAsync(async (req, res) => {
   // delete refresh token from database
   const { token } = req.body;
   await User.update(
@@ -177,10 +160,10 @@ const logoutUser = async (req, res) => {
     }
   );
   res.sendStatus(204);
-};
+});
 
 // search for users
-const searchUsers = async (req, res) => {
+const searchUsers = catchAsync(async (req, res) => {
   const { email, name, zipCode, city, phone } = req.query;
   console.log(email, name, zipCode, city, phone);
   const columns = ["email", "name", "zipCode", "city", "phone"];
@@ -203,7 +186,7 @@ const searchUsers = async (req, res) => {
     },
   });
   res.status(200).send(users);
-};
+});
 
 // limits and pagination
 const paginatedResults = (model) => {
@@ -227,7 +210,16 @@ const paginatedResults = (model) => {
     }
     try {
       results.results = await model.findAll({
-        attributes: ["id", "email", "name", "zipCode","city","phone", "type", "refreshToken"],
+        attributes: [
+          "id",
+          "email",
+          "name",
+          "zipCode",
+          "city",
+          "phone",
+          "type",
+          "refreshToken",
+        ],
         offset: startIndex,
         limit: limit,
       });
@@ -237,7 +229,7 @@ const paginatedResults = (model) => {
       res.status(500).json({ message: error.message });
     }
   };
-}
+};
 
 // validate user input
 const validateUserInput = (req, res, next) => {
@@ -254,17 +246,13 @@ const validateUserInput = (req, res, next) => {
   });
   const { error } = userSchema.validate(req.body);
   if (error) {
-    // console.log(error.details.map(item => item.message).join(','));
     const msg = error.details[0];
     console.log(msg);
-    // throw new ExpressError(400, msg);
-    // throw new Error(msg);
-    res.status(400).send(msg);
-    return
+    throw new ExpressError(400, msg);
   } else {
     next();
   }
-}
+};
 
 module.exports = {
   register,
@@ -277,5 +265,5 @@ module.exports = {
   checkRefreshToken,
   logoutUser,
   searchUsers,
-  validateUserInput
+  validateUserInput,
 };
