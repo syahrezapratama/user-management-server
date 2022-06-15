@@ -4,35 +4,49 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { createAccessToken, createRefreshToken } = require("../tokens/index.js");
 const { Op } = require("sequelize");
+const Joi = require("joi");
+const catchAsync = require("../utils/catchAsync.js");
+const ExpressError = require("../utils/ExpressError.js");
 
 // main model
 const User = db.users;
 
-// register user with Joi validation
-const register = async (req, res) => {
+// register
+const register = catchAsync(async (req, res, next) => {
   const userData = {
     ...req.body,
     type: req.body.type ? req.body.type : "normal",
   };
   const userExist = await User.findOne({ where: { email: userData.email } });
   if (userExist) {
-    const warning = "Ein Nutzer mit dem eingegebenen Email ist bereits angemeldet.";
+    const warning =
+      "Ein Nutzer mit dem eingegebenen Email ist bereits angemeldet.";
     res.status(400).send({ message: warning });
-    // return res.send(warning);
-  } else {
-    try { 
-      const user = await User.create(userData);
-      res.status(201).send(user);
-    } catch (error) {
-      console.log(error);
-      res
-        .status(400)
-        .send({
-          message: "Bitte prüfen und korrigieren Sie ihre Daten.",
-        });
-    }
+    return;
+  } 
+  try {
+    const user = await User.create(userData);
+    res.status(201).send(user);
+  } catch (error) {
+    console.log(error);
+    res.status(400).send({
+      message: "Bitte prüfen und korrigieren Sie ihre Daten.",
+    });
+    return;
   }
-};
+  // else {
+  //   try {
+  //     const user = await User.create(userData);
+  //     res.status(201).send(user);
+  //   } catch (error) {
+  //     console.log(error);
+  //     res.status(400).send({
+  //       message: "Bitte prüfen und korrigieren Sie ihre Daten.",
+  //     });
+  //     return;
+  //   }
+  // }
+});
 
 // get all users (with pagination)
 const getAllUsers = async (req, res) => {
@@ -119,29 +133,19 @@ const loginUser = async (req, res) => {
     },
   });
   try {
-    // compare hashed password
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
-      return res.send("Try again.");
+      res.status(401).send({ message: "Incorrect email or password." });
+      return;
     }
     const authUser = { email: user.email };
-    // create refresh and access token
     const accessToken = createAccessToken(authUser);
-    const refreshToken = createRefreshToken(authUser);
-    // put refresh token in the database
-    await User.update(
-      { refreshToken: refreshToken },
-      {
-        where: {
-          email: user.email,
-        },
-      }
-    );
-    await res.json({ accessToken: accessToken, refreshToken: refreshToken });
-    // res.status(200).send("User is logged in.");
+    await res
+      .status(200)
+      .send({ id: user.id, email: user.email, name: user.name, accessToken: accessToken });
   } catch (error) {
     console.log(error);
-    res.status(500).send();
+    res.status(500).send({ message: "Something went wrong, try again later."});
   }
 };
 
@@ -179,23 +183,20 @@ const logoutUser = async (req, res) => {
 const searchUsers = async (req, res) => {
   const { email, name, zipCode, city, phone } = req.query;
   console.log(email, name, zipCode, city, phone);
-
   const columns = ["email", "name", "zipCode", "city", "phone"];
   const queries = [email, name, zipCode, city, phone];
   let arr = [];
-
   for (let i = 0; i < columns.length; i++) {
     let column = columns[i];
     if (queries[i]) {
-      arr.push({ 
+      arr.push({
         [column]: {
-          [Op.substring]: queries[i]}
+          [Op.substring]: queries[i],
+        },
       });
     }
   }
-
   console.log(arr);
-
   const users = await User.findAll({
     where: {
       [Op.and]: arr,
@@ -204,9 +205,71 @@ const searchUsers = async (req, res) => {
   res.status(200).send(users);
 };
 
+// limits and pagination
+const paginatedResults = (model) => {
+  return async (req, res, next) => {
+    const page = parseInt(req.query.page);
+    const limit = parseInt(req.query.limit);
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+    const results = {};
+    if (endIndex < (await model.count({}))) {
+      results.next = {
+        page: page + 1,
+        limit: limit,
+      };
+    }
+    if (startIndex > 0) {
+      results.previous = {
+        page: page - 1,
+        limit: limit,
+      };
+    }
+    try {
+      results.results = await model.findAll({
+        attributes: ["id", "email", "name", "zipCode","city","phone", "type", "refreshToken"],
+        offset: startIndex,
+        limit: limit,
+      });
+      res.paginatedResults = results;
+      next();
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  };
+}
+
+// validate user input
+const validateUserInput = (req, res, next) => {
+  const userSchema = Joi.object({
+    email: Joi.string()
+      .email({ minDomainSegments: 2, tlds: { allow: ["com", "net", "de"] } })
+      .required(),
+    name: Joi.string().alphanum().required(),
+    zipCode: Joi.string().min(5).max(5).required(),
+    city: Joi.string().required(),
+    phone: Joi.string().required(),
+    password: Joi.string().min(8).required(),
+    type: Joi.string(),
+  });
+  const { error } = userSchema.validate(req.body);
+  if (error) {
+    // console.log(error.details.map(item => item.message).join(','));
+    const msg = error.details[0];
+    console.log(msg);
+    // throw new ExpressError(400, msg);
+    // throw new Error(msg);
+    res.status(400).send(msg);
+    return
+  } else {
+    next();
+  }
+}
+
 module.exports = {
   register,
   getAllUsers,
+  paginatedResults,
   getUser,
   updateUser,
   deleteUser,
@@ -214,4 +277,5 @@ module.exports = {
   checkRefreshToken,
   logoutUser,
   searchUsers,
+  validateUserInput
 };

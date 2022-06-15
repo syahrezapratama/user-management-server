@@ -2,7 +2,6 @@ const express = require("express");
 const cors = require("cors");
 const app = express();
 
-
 var corsOptions = {
   origin: "http://localhost:8080",
 }
@@ -16,10 +15,10 @@ app.use(express.urlencoded({ extended: true })); // to support URL-encoded bodie
 const router = require("./routes/userRouter.js");
 app.use("/api", router);
 
-// testing api
-app.get("/", (req, res) => {
-  res.send("hello from the api!");
-});
+app.use((err, req, res, next) => {
+  const { statusCode = 500 , message = "Something went wrong" } = err;
+  res.status(statusCode).send(message);
+})
 
 // port
 const PORT = process.env.PORT || 8081;
