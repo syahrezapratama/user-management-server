@@ -134,20 +134,6 @@ const loginUser = catchAsync(async (req, res) => {
       });
 });
 
-const logoutUser = catchAsync(async (req, res) => {
-  // delete refresh token from database
-  const { token } = req.body;
-  await User.update(
-    { refreshToken: null },
-    {
-      where: {
-        refreshToken: token,
-      },
-    }
-  );
-  res.sendStatus(204);
-});
-
 // search for users
 const searchUsers = catchAsync(async (req, res) => {
   const { email, name, zipCode, city, phone } = req.query;
@@ -248,7 +234,6 @@ module.exports = {
   updateUser,
   deleteUser,
   loginUser,
-  logoutUser,
   searchUsers,
   validateUserInput,
 };

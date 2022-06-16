@@ -43,8 +43,6 @@ router.delete("/user/:id", authenticateUser, authenticateRole(), userController.
 
 router.post("/login", userController.loginUser);
 
-router.delete("/logout", userController.logoutUser);
-
 router.get("/search", authenticateUser, userController.searchUsers);
 
 router.all("*", (req, res, next) => {
