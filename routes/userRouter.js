@@ -43,8 +43,6 @@ router.delete("/user/:id", authenticateUser, authenticateRole(), userController.
 
 router.post("/login", userController.loginUser);
 
-router.post("/token", userController.checkRefreshToken);
-
 router.delete("/logout", userController.logoutUser);
 
 router.get("/search", authenticateUser, userController.searchUsers);
