@@ -59,6 +59,7 @@ const getUser = catchAsync(async (req, res) => {
 
 // update a user
 const updateUser = catchAsync(async (req, res) => {
+  console.log(req);
   const id = req.params.id;
   const newPassword = req.body.password;
   const isUserExist = await User.findOne({
@@ -120,7 +121,7 @@ const loginUser = catchAsync(async (req, res) => {
     if (!validPassword) {
       throw new ExpressError(401, { message: "Incorrect email or password" });
     }
-    const authUser = { email: user.email };
+    const authUser = { id: user.id, email: user.email, type: user.type };
     const accessToken = createAccessToken(authUser);
     await res
       .status(200)
@@ -129,6 +130,7 @@ const loginUser = catchAsync(async (req, res) => {
         email: user.email,
         name: user.name,
         accessToken: accessToken,
+        type: user.type
       });
 });
 
