@@ -2,7 +2,7 @@ require("dotenv").config();
 const db = require("../models/index.js");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { createAccessToken, createRefreshToken } = require("../tokens/index.js");
+const { createAccessToken } = require("../tokens/index.js");
 const { Op } = require("sequelize");
 const Joi = require("joi");
 const catchAsync = require("../utils/catchAsync.js");
@@ -134,22 +134,6 @@ const loginUser = catchAsync(async (req, res) => {
       });
 });
 
-const checkRefreshToken = async (req, res) => {
-  const refreshToken = req.body.token;
-  if (refreshToken == null) return res.sendStatus(401);
-  const refreshTokenInDB = await User.findOne({
-    where: {
-      refreshToken: refreshToken,
-    },
-  });
-  if (!refreshTokenInDB) return res.sendStatus(403);
-  jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (error, user) => {
-    if (error) return res.sendStatus(403);
-    const accessToken = createAccessToken({ email: user.email });
-    res.json({ accessToken: accessToken });
-  });
-};
-
 const logoutUser = catchAsync(async (req, res) => {
   // delete refresh token from database
   const { token } = req.body;
@@ -264,7 +248,6 @@ module.exports = {
   updateUser,
   deleteUser,
   loginUser,
-  checkRefreshToken,
   logoutUser,
   searchUsers,
   validateUserInput,
