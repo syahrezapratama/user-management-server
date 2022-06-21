@@ -2,11 +2,12 @@ require("dotenv").config();
 const db = require("../models/index.js");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { createAccessToken } = require("../tokens/index.js");
+const { createToken } = require("../tokens/index.js");
 const { Op } = require("sequelize");
 const Joi = require("joi");
 const catchAsync = require("../utils/catchAsync.js");
 const ExpressError = require("../utils/ExpressError.js");
+const { sendVerificationEmail } = require("../config/emailConfig.js");
 
 // main model
 const User = db.users;
@@ -24,7 +25,14 @@ const register = catchAsync(async (req, res, next) => {
     res.status(400).send({ message: warning });
     return;
   }
-  const user = await User.create(userData);
+  const verifyUser = { email: userData.email };
+  const verificationToken = createToken(verifyUser);
+  const user = await User.create({
+    ...userData,
+    verified: false,
+    verificationToken: verificationToken,
+  });
+  sendVerificationEmail(userData.email, userData.name, verificationToken);
   res.status(201).send(user);
 });
 
@@ -40,16 +48,7 @@ const getUser = catchAsync(async (req, res) => {
     where: {
       id: id,
     },
-    attributes: [
-      "id",
-      "email",
-      "name",
-      "zipCode",
-      "city",
-      "phone",
-      "type",
-      "refreshToken",
-    ],
+    attributes: ["id", "email", "name", "zipCode", "city", "phone", "type"],
   });
   if (!user) {
     throw new ExpressError(404, "User Not Found");
@@ -63,7 +62,7 @@ const updateUser = catchAsync(async (req, res) => {
   const id = req.params.id;
   const newPassword = req.body.password;
   const isUserExist = await User.findOne({
-    where: { id: id }
+    where: { id: id },
   });
   if (!isUserExist) {
     throw new ExpressError(404, "User Not Found");
@@ -117,21 +116,22 @@ const loginUser = catchAsync(async (req, res) => {
       email: email,
     },
   });
+  if (!user.verified){
+    throw new ExpressError(401, { message: "Pending account. Please verify your email."})
+  }
   const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword) {
-      throw new ExpressError(401, { message: "Incorrect email or password" });
-    }
-    const authUser = { id: user.id, email: user.email, type: user.type };
-    const accessToken = createAccessToken(authUser);
-    await res
-      .status(200)
-      .send({
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        accessToken: accessToken,
-        type: user.type
-      });
+  if (!validPassword) {
+    throw new ExpressError(401, { message: "Incorrect email or password" });
+  }
+  const authUser = { id: user.id, email: user.email, type: user.type };
+  const accessToken = createToken(authUser);
+  await res.status(200).send({
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    accessToken: accessToken,
+    type: user.type,
+  });
 });
 
 // search for users
@@ -182,16 +182,7 @@ const paginatedResults = (model) => {
     }
     try {
       results.results = await model.findAll({
-        attributes: [
-          "id",
-          "email",
-          "name",
-          "zipCode",
-          "city",
-          "phone",
-          "type",
-          "refreshToken",
-        ],
+        attributes: ["id", "email", "name", "zipCode", "city", "phone", "type"],
         offset: startIndex,
         limit: limit,
       });
@@ -226,6 +217,30 @@ const validateUserInput = (req, res, next) => {
   }
 };
 
+const verifyEmail = catchAsync(async (req, res) => {
+  const { verificationToken } = req.params;
+  const isUserExist = await User.findOne({
+    where: {
+      verificationToken: verificationToken,
+    },
+  });
+  if (!isUserExist) {
+    throw new ExpressError(404, { message: "User Not Found." });
+  }
+  await User.update(
+    {
+      verified: true,
+      verificationToken: null,
+    },
+    {
+      where: {
+        id: isUserExist.id,
+      },
+    }
+  );
+  res.status(200).send({ message: "Account verified. Please login." });
+});
+
 module.exports = {
   register,
   getAllUsers,
@@ -236,4 +251,5 @@ module.exports = {
   loginUser,
   searchUsers,
   validateUserInput,
+  verifyEmail,
 };

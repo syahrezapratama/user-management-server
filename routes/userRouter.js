@@ -45,6 +45,8 @@ router.post("/login", userController.loginUser);
 
 router.get("/search", authenticateUser, userController.searchUsers);
 
+router.get("/verify/:verificationToken", userController.verifyEmail);
+
 router.all("*", (req, res, next) => {
   next(new ExpressError(404, "Page Not Found"))
 })
