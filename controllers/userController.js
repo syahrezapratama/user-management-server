@@ -33,7 +33,7 @@ const register = catchAsync(async (req, res, next) => {
     verificationToken: verificationToken,
   });
   sendVerificationEmail(userData.email, userData.name, verificationToken);
-  res.status(201).send(user);
+  res.status(201).send({ message: "Nutzer wurde registriert."});
 });
 
 // get all users (with pagination)
