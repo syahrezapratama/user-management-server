@@ -1,7 +1,6 @@
 require("dotenv").config();
 const db = require("../models/index.js");
 const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
 const { createToken } = require("../tokens/index.js");
 const { Op } = require("sequelize");
 const Joi = require("joi");
@@ -33,7 +32,7 @@ const register = catchAsync(async (req, res, next) => {
     verificationToken: verificationToken,
   });
   sendVerificationEmail(userData.email, userData.name, verificationToken);
-  res.status(201).send({ message: "Nutzer wurde registriert."});
+  res.status(201).send({ message: "Nutzer wurde registriert." });
 });
 
 // get all users (with pagination)
@@ -58,7 +57,6 @@ const getUser = catchAsync(async (req, res) => {
 
 // update a user
 const updateUser = catchAsync(async (req, res) => {
-  console.log(req);
   const id = req.params.id;
   const newPassword = req.body.password;
   const isUserExist = await User.findOne({
@@ -85,6 +83,7 @@ const updateUser = catchAsync(async (req, res) => {
       zipCode: req.body.zipCode,
       city: req.body.city,
       phone: req.body.phone,
+      type: req.body.type,
     },
     {
       where: {
@@ -116,12 +115,20 @@ const loginUser = catchAsync(async (req, res) => {
       email: email,
     },
   });
-  if (!user.verified){
-    throw new ExpressError(401, { message: "Pending account. Please verify your email."})
+  if (!user) {
+    throw new ExpressError(401, {
+      message: "Sie sind noch nicht registriert.",
+    });
+  }
+  if (user && !user.verified) {
+    throw new ExpressError(401, {
+      message:
+        "E-Mail wurde noch nicht verifiziert. Bitte verifizieren Sie Ihre E-Mail.",
+    });
   }
   const validPassword = await bcrypt.compare(password, user.password);
   if (!validPassword) {
-    throw new ExpressError(401, { message: "Incorrect email or password" });
+    throw new ExpressError(401, { message: "E-Mail oder Passwort falsch." });
   }
   const authUser = { id: user.id, email: user.email, type: user.type };
   const accessToken = createToken(authUser);
@@ -217,6 +224,29 @@ const validateUserInput = (req, res, next) => {
   }
 };
 
+// validate user input
+const validateInput = (req, res, next) => {
+  const userSchema = Joi.object({
+    email: Joi.string()
+      .email({ minDomainSegments: 2, tlds: { allow: ["com", "net", "de"] } })
+      .required(),
+    name: Joi.string().required(),
+    zipCode: Joi.string().min(5).max(5).required(),
+    city: Joi.string().required(),
+    phone: Joi.string().required(),
+    password: Joi.string().min(8).optional(),
+    type: Joi.string(),
+  });
+  const { error } = userSchema.validate(req.body);
+  if (error) {
+    const msg = error.details[0];
+    console.log(msg);
+    throw new ExpressError(400, msg);
+  } else {
+    next();
+  }
+};
+
 const verifyEmail = catchAsync(async (req, res) => {
   const { verificationToken } = req.params;
   const isUserExist = await User.findOne({
@@ -252,4 +282,5 @@ module.exports = {
   searchUsers,
   validateUserInput,
   verifyEmail,
+  validateInput,
 };

@@ -37,7 +37,7 @@ router.get("/users", authenticateUser, userController.paginatedResults(User), us
 
 router.get("/user/:id", authenticateUser, userController.getUser);
 
-router.put("/user/:id", authenticateUser, authenticateRole(), userController.updateUser);
+router.put("/user/:id", authenticateUser, authenticateRole(), userController.validateInput, userController.updateUser);
 
 router.delete("/user/:id", authenticateUser, authenticateRole(), userController.deleteUser);
 
