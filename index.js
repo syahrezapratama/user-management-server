@@ -1,6 +1,27 @@
 const express = require("express");
 const cors = require("cors");
 const app = express();
+const swaggerUI = require("swagger-ui-express");
+const swaggerJsDoc = require("swagger-jsdoc");
+
+const swaggerOptions = {
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "User management API",
+      version: "1.0.0",
+      description: "A simple Express user management API"
+    },
+    servers: [
+      {
+        url: "http://localhost:8081"
+      }
+    ],
+  },
+  apis: ["./routes/*.js"],
+}
+
+const specs = swaggerJsDoc(swaggerOptions)
 
 var corsOptions = {
   origin: "http://localhost:8080",
@@ -14,7 +35,7 @@ app.use(express.urlencoded({ extended: true })); // to support URL-encoded bodie
 // routers
 const router = require("./routes/userRouter.js");
 app.use("/api", router);
-
+app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(specs))
 app.use((err, req, res, next) => {
   const { statusCode = 500 , message = "Something went wrong" } = err;
   console.log(statusCode, message);

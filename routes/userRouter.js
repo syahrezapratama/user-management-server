@@ -30,13 +30,76 @@ function authenticateRole() {
   }
 }
 
-// api routes
+/**
+ * @swagger
+ * /register:
+ *  post:
+ *    summary: Create a new user
+ *    responses:
+ *      200:
+ *        description: The user was successfully created
+ *        content:
+ *          application/json:
+ *            schema: 
+ *              type: object
+ *      400:
+ *        description: A user with the same e-mail is already registered
+ */
 router.post("/register", userController.validateUserInput, userController.register);
 
+/**
+ * @swagger
+ * /users:
+ *  get:
+ *    summary: Get the list of all users
+ *    responses:
+ *      200:
+ *        description: The list of users
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: array
+ */
 router.get("/users", authenticateUser, userController.paginatedResults(User), userController.getAllUsers);
 
-router.get("/user/:id", authenticateUser, userController.getUser);
+/**
+ * @swagger
+ * /user/{id}:
+ *  get:
+ *    summary: Get a user by id
+ *    parameters:
+ *      - in: path
+ *        name: id
+ *        schema:
+ *          type: string
+ *        required: true
+ *        description: The user id
+ *    responses:
+ *      200:
+ *        description: The user object by id
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *      404:
+ *        description: The user was not found
+ */
+router.get("/users/:id", authenticateUser, userController.getUser);
 
+/**
+ * /user/{id}:
+ *  put:
+ *    summary: Update a user by id
+ *    parameters:
+ *    - in: path
+ *      name: id
+ *      schema:
+ *        type: string
+ *      required: true
+ *      description: The user id
+ *    responses:
+ * 
+ */
 router.put("/user/:id", authenticateUser, authenticateRole(), userController.validateInput, userController.updateUser);
 
 router.delete("/user/:id", authenticateUser, authenticateRole(), userController.deleteUser);
