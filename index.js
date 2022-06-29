@@ -14,7 +14,7 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: "http://localhost:8081"
+        url: "http://localhost:8081/api"
       }
     ],
   },
@@ -33,7 +33,7 @@ app.use(express.json()); // to support JSON-encoded bodies
 app.use(express.urlencoded({ extended: true })); // to support URL-encoded bodies
 
 // routers
-const router = require("./routes/userRouter.js");
+const router = require("./routes/index.js");
 app.use("/api", router);
 app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(specs))
 app.use((err, req, res, next) => {

@@ -207,7 +207,7 @@ const validateUserInput = (req, res, next) => {
     email: Joi.string()
       .email({ minDomainSegments: 2, tlds: { allow: ["com", "net", "de"] } })
       .required(),
-    name: Joi.string().alphanum().required(),
+    name: Joi.string().required(),
     zipCode: Joi.string().min(5).max(5).required(),
     city: Joi.string().required(),
     phone: Joi.string().required(),
