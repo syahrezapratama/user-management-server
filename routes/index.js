@@ -23,6 +23,7 @@ const User = db.users;
  *        id:
  *          type: integer
  *          description: The auto-generated id of the user
+ *          readOnly: true
  *        email:
  *          type: string
  *          description: The email to the user's account
@@ -43,7 +44,6 @@ const User = db.users;
  *          description: The password to the user's account
  *          writeOnly: true
  *      example:
- *        id: 6
  *        email: adamwest@test.com
  *        name: Adam West
  *        zipCode: "12345"
@@ -241,7 +241,7 @@ router.post("/auth/login", userController.loginUser);
 
 /**
  * @swagger
- * /users/search:
+ * /search:
  *  get:
  *    summary: Get users based on the search queries
  *    tags: [Users]
@@ -268,7 +268,7 @@ router.post("/auth/login", userController.loginUser);
  *        description: Search results
  *        
  */
-router.get("/users/search", authenticateUser, userController.searchUsers);
+router.get("/search", authenticateUser, userController.searchUsers);
 
 /**
  * @swagger

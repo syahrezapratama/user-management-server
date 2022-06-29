@@ -11,7 +11,6 @@ const { sendVerificationEmail } = require("../config/emailConfig.js");
 // main model
 const User = db.users;
 
-// register
 const register = catchAsync(async (req, res, next) => {
   const userData = {
     ...req.body,
@@ -35,12 +34,10 @@ const register = catchAsync(async (req, res, next) => {
   res.status(201).send({ message: "Nutzer wurde registriert." });
 });
 
-// get all users (with pagination)
 const getAllUsers = catchAsync(async (req, res) => {
   res.status(200).send(res.paginatedResults);
 });
 
-// get a single user
 const getUser = catchAsync(async (req, res) => {
   let id = req.params.id;
   let user = await User.findOne({
@@ -55,7 +52,6 @@ const getUser = catchAsync(async (req, res) => {
   res.status(200).send(user);
 });
 
-// update a user
 const updateUser = catchAsync(async (req, res) => {
   const id = req.params.id;
   const newPassword = req.body.password;
@@ -95,7 +91,6 @@ const updateUser = catchAsync(async (req, res) => {
   res.status(200).send(user);
 });
 
-// detele a user
 const deleteUser = catchAsync(async (req, res) => {
   let id = req.params.id;
   await User.destroy({
@@ -106,10 +101,8 @@ const deleteUser = catchAsync(async (req, res) => {
   res.status(200).send(`User with id: ${id} is deleted.`);
 });
 
-// login a user
 const loginUser = catchAsync(async (req, res) => {
   const { email, password } = req.body;
-  // find user with the email
   const user = await User.findOne({
     where: {
       email: email,
@@ -141,7 +134,6 @@ const loginUser = catchAsync(async (req, res) => {
   });
 });
 
-// search for users
 const searchUsers = catchAsync(async (req, res) => {
   const { email, name, zipCode, city, phone } = req.query;
   console.log(email, name, zipCode, city, phone);
@@ -167,7 +159,6 @@ const searchUsers = catchAsync(async (req, res) => {
   res.status(200).send(users);
 });
 
-// limits and pagination
 const paginatedResults = (model) => {
   return async (req, res, next) => {
     const page = parseInt(req.query.page);
