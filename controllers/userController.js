@@ -216,7 +216,7 @@ const validateUserInput = (req, res, next) => {
 };
 
 // validate user input
-const validateInput = (req, res, next) => {
+const validateUpdate = (req, res, next) => {
   const userSchema = Joi.object({
     email: Joi.string()
       .email({ minDomainSegments: 2, tlds: { allow: ["com", "net", "de"] } })
@@ -273,5 +273,5 @@ module.exports = {
   searchUsers,
   validateUserInput,
   verifyEmail,
-  validateInput,
+  validateUpdate,
 };

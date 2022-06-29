@@ -188,7 +188,7 @@ router.get("/users/:id", authenticateUser, userController.getUser);
  *      500:
  *        description: Server error
  */
-router.put("/users/:id", authenticateUser, authenticateRole(), userController.validateInput, userController.updateUser);
+router.put("/users/:id", authenticateUser, authenticateRole(), userController.validateUpdate, userController.updateUser);
 
 /**
  * @swagger
