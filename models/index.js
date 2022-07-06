@@ -1,7 +1,6 @@
 const dbConfig = require("../config/dbConfig.js");
 const { Sequelize, DataTypes } = require("sequelize");
 
-// connecting to the mysql database
 const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {
   host: dbConfig.HOST,
   dialect: dbConfig.dialect,
@@ -14,7 +13,6 @@ const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {
   },
 });
 
-// testing the connection
 sequelize
   .authenticate()
   .then(() => {
@@ -24,7 +22,6 @@ sequelize
     console.log("Unable to connect to the database", error);
   });
 
-// synchornizing
 const db = {};
 db.Sequelize = Sequelize;
 db.sequelize = sequelize;

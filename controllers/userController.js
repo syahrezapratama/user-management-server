@@ -85,7 +85,6 @@ const updateUser = catchAsync(async (req, res) => {
       where: {
         id: id,
       },
-      // individualHooks: true,
     }
   );
   res.status(200).send(user);
@@ -192,7 +191,6 @@ const paginatedResults = (model) => {
   };
 };
 
-// validate user input
 const validateUserInput = (req, res, next) => {
   const userSchema = Joi.object({
     email: Joi.string()
@@ -215,7 +213,6 @@ const validateUserInput = (req, res, next) => {
   }
 };
 
-// validate user input
 const validateUpdate = (req, res, next) => {
   const userSchema = Joi.object({
     email: Joi.string()

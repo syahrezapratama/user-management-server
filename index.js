@@ -28,11 +28,9 @@ var corsOptions = {
 }
 app.use(cors(corsOptions));
 
-// read body data
-app.use(express.json()); // to support JSON-encoded bodies
-app.use(express.urlencoded({ extended: true })); // to support URL-encoded bodies
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// routers
 const router = require("./routes/index.js");
 app.use("/api", router);
 app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(specs))
@@ -42,10 +40,8 @@ app.use((err, req, res, next) => {
   res.status(statusCode).send(message);
 })
 
-// port
 const PORT = process.env.PORT || 8081;
 
-// server
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}...`);
 });
